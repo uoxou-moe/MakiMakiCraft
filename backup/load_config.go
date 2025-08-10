@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 type Config struct {
-	MinecraftWorldDir    string
+	MinecraftWorldDirs   []string
 	BackupOutputPath     string
 	BackupFileNamePrefix string
 	S3BucketName         string
@@ -15,17 +16,31 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
+	worldDirsStr := os.Getenv("MINECRAFT_WORLD_DIRS")
+	if worldDirsStr == "" {
+		return nil, fmt.Errorf("環境変数 MINECRAFT_WORLD_DIRS が設定されていません。(例: /path/to/world,/path/to/world_nether)")
+	}
+
+	// カンマで分割し、各パスの前後の空白を削除
+	var worldDirs []string
+	for _, p := range strings.Split(worldDirsStr, ",") {
+		trimmedPath := strings.TrimSpace(p)
+		if trimmedPath != "" {
+			worldDirs = append(worldDirs, trimmedPath)
+		}
+	}
+	if len(worldDirs) == 0 {
+		return nil, fmt.Errorf("環境変数 MINECRAFT_WORLD_DIRS に有効なパスが指定されていません。")
+	}
+
 	cfg := &Config{
-		MinecraftWorldDir:    os.Getenv("MINECRAFT_WORLD_DIR"),
+		MinecraftWorldDirs:   worldDirs,
 		BackupOutputPath:     os.Getenv("BACKUP_OUTPUT_PATH"),
 		BackupFileNamePrefix: os.Getenv("BACKUP_FILE_NAME_PREFIX"),
 		S3BucketName:         os.Getenv("S3_BUCKET_NAME"),
 		AWSRegion:            os.Getenv("AWS_REGION"),
 	}
 
-	if cfg.MinecraftWorldDir == "" {
-		return nil, fmt.Errorf("環境変数 MINECRAFT_WORLD_DIR が設定されていません。(例: /path/to/your/minecraft_server/world)")
-	}
 	if cfg.BackupOutputPath == "" {
 		return nil, fmt.Errorf("環境変数 BACKUP_OUTPUT_PATH が設定されていません。(例: /path/to/your/backups)")
 	}

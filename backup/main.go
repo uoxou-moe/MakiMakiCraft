@@ -23,10 +23,10 @@ func main() {
 	outputFileName := fmt.Sprintf("%s_%s.tar.gz", cfg.BackupFileNamePrefix, currentTime)
 	fullBackupPath := filepath.Join(cfg.BackupOutputPath, outputFileName)
 
-	log.Printf("ワールドディレクトリ '%s' を '%s' に圧縮中...", cfg.MinecraftWorldDir, fullBackupPath)
+	log.Printf("ワールドディレクトリ '%s' を '%s' に圧縮中...", cfg.MinecraftWorldDirs, fullBackupPath)
 
 	// 圧縮処理を呼び出す
-	if err := createTarGz(cfg.MinecraftWorldDir, fullBackupPath); err != nil {
+	if err := createTarGz(cfg.MinecraftWorldDirs, fullBackupPath); err != nil {
 		log.Fatalf("ワールドの圧縮に失敗しました: %v", err)
 	}
 
