@@ -33,7 +33,7 @@ func main() {
 	log.Printf("ワールドの圧縮が完了しました: %s", fullBackupPath)
 
 	// S3へのアップロード
-	s3ObjectKey := fmt.Sprintf("minecraft_backups/%s", outputFileName) // S3バケット内のパスとファイル名
+	s3ObjectKey := "minecraft_backups/latest_world.tar.gz"
 	ctx := context.Background()                                    // AWS SDK操作のためのContext
 
 	// S3アップロード処理を呼び出す
