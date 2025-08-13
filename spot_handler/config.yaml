@@ -1,6 +1,5 @@
 pollingInterval: "5s"
 shutdownScript: "./shutdown.sh"
-# metadataUrl: "http://169.254.169.254/latest/meta-data/spot/instance-action"
-metadataUrl: "http://localhost:8080/mock-interruption"
+metadataUrl: "http://169.254.169.254/latest/meta-data/spot/instance-action"
 # テスト用URL (ローカルでテストサーバーを立てる場合などに使う)
 # metadataUrl: "http://localhost:8080/mock-interruption"
