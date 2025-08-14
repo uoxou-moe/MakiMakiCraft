@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -82,12 +83,15 @@ func executeShutdownScript(scriptPath string) {
 }
 
 func main() {
+	configPath := flag.String("config", "/etc/spot-handler/config.yaml", "Path to the configuration file")
+	flag.Parse()
+
 	log.Println("Starting Spot Interruption Handler...")
 
 	// 1. 設定ファイルを読み込む
-	config, err := loadConfig("config.yaml")
+	config, err := loadConfig(*configPath)
 	if err != nil {
-		log.Fatalf("Fatal: Could not load config. %v", err)
+		log.Fatalf("Fatal: Could not load config from %s. %v", *configPath, err)
 	}
 	log.Printf("Config loaded: Polling every %s", config.PollingInterval)
 
