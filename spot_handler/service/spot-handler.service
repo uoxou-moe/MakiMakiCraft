@@ -1,0 +1,15 @@
+[Unit]
+Description=Go Spot Instance Interruption Handler
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ec2-user
+Group=ec2-user
+Type=simple
+WorkingDirectory=/etc/spot-handler
+ExecStart=/usr/local/bin/spot-handler
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
