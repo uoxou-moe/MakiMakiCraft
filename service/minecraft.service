@@ -1,0 +1,20 @@
+[Unit]
+Description=Minecraft Server
+After=network.target
+
+[Service]
+User=minecraft
+Group=minecraft
+WorkingDirectory=/opt/minecraft
+# Demo-Demo-Telepathy
+EnvironmentFile=/opt/minecraft/plugins/.env
+# backup
+EnvironmentFile=/etc/sysconfig/minecraft-backup
+ExecStart=/usr/bin/java -Xms2G -Xmx3G -jar paper.jar nogui
+ExecStop=/opt/backup/minecraft_backup_tool_linux_amd64
+Type=simple
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
