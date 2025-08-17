@@ -39,12 +39,25 @@ func loadConfig(path string) (*Config, error) {
 // --- 中断検知関数 ---
 // trueを返した場合、中断通知があったことを示す
 func checkInterruption(url string) (bool, error) {
+	token, err := getIMDSv2Token()
+	if err != nil {
+		log.Printf("Could not get IMDSv2 token: %v. Proceeding without token", err)
+	}
+
 	// タイムアウトを設定したHTTPクライアントを作成
 	client := &http.Client{
 		Timeout: 2 * time.Second,
 	}
+	
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return false, fmt.Errorf("failed to create metadata request: %w", err)
+	}
+	if token != "" {
+		req.Header.Set("X-aws-ec2-metadata-token", token)
+	}
 
-	resp, err := client.Get(url)
+	resp, err := client.Do(req)
 	if err != nil {
 		// ネットワークエラーなど
 		return false, fmt.Errorf("failed to get metadata: %w", err)
@@ -61,6 +74,9 @@ func checkInterruption(url string) (bool, error) {
 		// 404 Not Found: 正常、中断なし
 		log.Println("No interruption notice. Continuing to poll.")
 		return false, nil
+	case http.StatusUnauthorized:
+		log.Println("Error: 401 Unauthorized/ IMDSv2 token is likely required or invalid.")
+		return false, fmt.Errorf("unauthorized access to metadata service(status 401)")
 	default:
 		// その他のステータスコードは予期せぬエラー
 		return false, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -133,4 +149,35 @@ func main() {
 			return
 		}
 	}
+}
+
+func getIMDSv2Token() (string, error) {
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+	}
+
+	// トークン取得用のPUTリクエストを作成
+	req, err := http.NewRequest("PUT", "http://169.254.169.254/latest/api/token", nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create token request: %w", err)
+	}
+	// ヘッダーにTTL（トークンの有効期間）を設定
+	req.Header.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600") // 6 hours
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to get IMDSv2 token: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to get IMDSv2 token, status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read token response body: %w", err)
+	}
+
+	return string(body), nil
 }
