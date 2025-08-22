@@ -53,11 +53,6 @@ send_discord_notification() {
         "color": "$color",
         "fields": [
         {
-            "name": "Instance ID",
-            "value": "$instance_id",
-            "inline": true
-        },
-        {
             "name": "Timestamp (UTC)",
             "value": "$(date -u +"%Y-%m-%d %H:%M:%S")",
             "inline": true
@@ -112,7 +107,7 @@ if "$MCRCON_PATH" -H "$RCON_HOST" -P "$RCON_PORT" -p "$RCON_PASSWORD" "stop"; th
     log "SUCCESS: 'stop' command sent successfully to the Minecraft server."
 
     # ★★★ 通知を送信 (成功ケース) ★★★
-    send_discord_notification "✅ **Shutdown initiated gracefully!**\nServer stop command sent via RCON." "3066993"
+    send_discord_notification "✅ **Shutdown initiated gracefully!**\nServer has stopped due to server problem." "3066993"
 
     log "The minecraft.service will now handle the final shutdown and world save."
 else
