@@ -1,4 +1,3 @@
-# 1. TerraformとAWSプロバイダーの設定
 terraform {
   required_providers {
     aws = {
@@ -9,20 +8,22 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-northeast-1"
+  region  = "ap-northeast-1"
   profile = "terraform-sso-profile"
 }
 
-# 2. Lambda関数用のIAMロールとポリシーを定義
-resource "aws_iam_role" "lambda_exec_role" {
-  name = "terraform-lambda-role"
+# CloudWatch Logs書き込み権限のみを持つIAMロール
+resource "aws_iam_role" "minimal_lambda_role" {
+  # terraform-* プレフィックスを忘れずに！
+  name = "terraform-minimal-lambda-role"
 
+  # Lambdaサービスがこのロールを引き受けるためのお決まりの設定
   assume_role_policy = jsonencode({
-    Version = "2012-10-17",
+    Version   = "2012-10-17",
     Statement = [
       {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
+        Action    = "sts:AssumeRole",
+        Effect    = "Allow",
         Principal = {
           Service = "lambda.amazonaws.com"
         }
@@ -31,12 +32,10 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 }
 
-resource "aws_iam_policy" "lambda_logging_policy" {
-  name        = "terraform-lambda-logging"
-  description = "IAM policy for logging from a Lambda function"
-
+resource "aws_iam_policy" "minimal_logging_policy" {
+  name   = "terraform-minimal-lambda-logging-policy"
   policy = jsonencode({
-    Version = "2012-10-17",
+    Version   = "2012-10-17",
     Statement = [
       {
         Action = [
@@ -51,29 +50,23 @@ resource "aws_iam_policy" "lambda_logging_policy" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_logs_attachment" {
-  role       = aws_iam_role.lambda_exec_role.name
-  policy_arn = aws_iam_policy.lambda_logging_policy.arn
+resource "aws_iam_role_policy_attachment" "minimal_logs_attachment" {
+  role       = aws_iam_role.minimal_lambda_role.name
+  policy_arn = aws_iam_policy.minimal_logging_policy.arn
 }
 
-# 3. Lambda関数を定義
-resource "aws_lambda_function" "hello_world_lambda" {
-  filename      = "deployment_package.zip"
-  function_name = "TerraformHelloWorldLambda"
+resource "aws_lambda_function" "base_lambda" {
+  filename         = "deployment_package.zip"
+  function_name    = "SsmCommandExecutor"
+  role             = aws_iam_role.minimal_lambda_role.arn
+  handler          = "index.handler"
 
-  role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "index.handler"
+  # コードのZIPファイルが変更されたことをTerraformに伝えるために重要
   source_code_hash = filebase64sha256("deployment_package.zip")
-  runtime = "nodejs22.x"
+  runtime          = "nodejs22.x"
 
   tags = {
-    ManagedBy = "Terraform"
-    Language  = "Node.js"
+    ManagedBy = "Terraform",
+    Project   = "MinecraftServerAutomation"
   }
-}
-
-# 4. (任意) 作成されたリソースの情報を出力
-output "lambda_function_arn" {
-  description = "The ARN of the Lambda function"
-  value       = aws_lambda_function.hello_world_lambda.arn
 }

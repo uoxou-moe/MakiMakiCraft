@@ -1,10 +1,9 @@
 exports.handler = async (event) => {
-    console.log("Hello from Node.js Lambda!");
-    console.log("Received event:", JSON.stringify(event, null, 2));
+    console.log("init: Lambda function executed successfully!");
 
     const response = {
         statusCode: 200,
-        body: JSON.stringify('Hello from a Node.js Lambda function managed by Terraform!'),
+        body: JSON.stringify('Initial function is working.'),
     };
     return response;
 };
