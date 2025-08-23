@@ -32,12 +32,13 @@ resource "aws_iam_role" "minimal_lambda_role" {
   })
 }
 
-resource "aws_iam_policy" "minimal_logging_policy" {
-  name   = "terraform-minimal-lambda-logging-policy"
+resource "aws_iam_policy" "lambda_ssm_policy" {
+  name   = "terraform-lambda-ssm-policy"
   policy = jsonencode({
     Version   = "2012-10-17",
     Statement = [
       {
+        Sid = "AllowLogging",
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
@@ -45,14 +46,23 @@ resource "aws_iam_policy" "minimal_logging_policy" {
         ],
         Effect   = "Allow",
         Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Sid = "AllowSsmSendCommand",
+        Action = [
+          "ssm:SendCommand",
+          "ssm:GetCommandInvocation"
+        ],
+        Effect = "Allow",
+        Resource = "*"
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy_attachment" "minimal_logs_attachment" {
+resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   role       = aws_iam_role.minimal_lambda_role.name
-  policy_arn = aws_iam_policy.minimal_logging_policy.arn
+  policy_arn = aws_iam_policy.lambda_ssm_policy.arn
 }
 
 resource "aws_lambda_function" "base_lambda" {
