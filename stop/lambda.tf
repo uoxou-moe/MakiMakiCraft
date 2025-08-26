@@ -1,23 +1,6 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region  = "ap-northeast-1"
-  profile = "terraform-sso-profile"
-}
-
-# CloudWatch Logs書き込み権限のみを持つIAMロール
+# lambda関数用のIAMロール
 resource "aws_iam_role" "minimal_lambda_role" {
-  # terraform-* プレフィックスを忘れずに！
   name = "terraform-minimal-lambda-role"
-
-  # Lambdaサービスがこのロールを引き受けるためのお決まりの設定
   assume_role_policy = jsonencode({
     Version   = "2012-10-17",
     Statement = [
@@ -32,6 +15,8 @@ resource "aws_iam_role" "minimal_lambda_role" {
   })
 }
 
+# lambda関数用のIAM Policy.
+# Include: Logging, SSM
 resource "aws_iam_policy" "lambda_ssm_policy" {
   name   = "terraform-lambda-ssm-policy"
   policy = jsonencode({
@@ -65,13 +50,14 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_ssm_policy.arn
 }
 
+# lambda関数本体
 resource "aws_lambda_function" "base_lambda" {
   filename         = "deployment_package.zip"
   function_name    = "SsmCommandExecutor"
   role             = aws_iam_role.minimal_lambda_role.arn
   handler          = "index.handler"
 
-  # コードのZIPファイルが変更されたことをTerraformに伝えるために重要
+  # ハッシュによってファイルの変更を検知
   source_code_hash = filebase64sha256("deployment_package.zip")
   runtime          = "nodejs22.x"
 
