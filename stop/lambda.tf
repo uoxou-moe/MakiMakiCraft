@@ -61,6 +61,13 @@ resource "aws_lambda_function" "base_lambda" {
   source_code_hash = filebase64sha256("deployment_package.zip")
   runtime          = "nodejs22.x"
 
+  # environment variables
+  environment {
+    variables = {
+      TARGET_INSTANCE_ID = data.aws_instance.minecraft_server.id
+    }
+  }
+
   tags = {
     ManagedBy = "Terraform",
     Project   = "MinecraftServerAutomation"
